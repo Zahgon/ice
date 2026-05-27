@@ -18,13 +18,12 @@ type PacketConn struct {
 
 // ReadFrom reads a packet from the connection.
 func (f *PacketConn) ReadFrom(p []byte) (n int, addr net.Addr, err error) {
-	n, err = f.Conn.Read(p)
-	addr = f.Conn.RemoteAddr()
-
-	return
+	_ = "STUB: not implemented"
+	return 0, *new(net.Addr), nil
 }
 
 // WriteTo writes a packet with payload p to addr.
 func (f *PacketConn) WriteTo(p []byte, _ net.Addr) (int, error) {
-	return f.Conn.Write(p)
+	_ = "STUB: not implemented"
+	return 0, nil
 }

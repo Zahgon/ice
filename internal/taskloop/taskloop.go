@@ -32,92 +32,40 @@ type Loop struct {
 }
 
 // New creates and starts a new task loop.
-func New(onClose func()) *Loop {
-	l := &Loop{
-		tasks:        make(chan task),
-		done:         make(chan struct{}),
-		taskLoopDone: make(chan struct{}),
-	}
-
-	go l.runLoop(onClose)
-
-	return l
-}
+func New(onClose func()) *Loop { _ = "STUB: not implemented"; return nil }
 
 // runLoop handles registered tasks and agent close.
-func (l *Loop) runLoop(onClose func()) {
-	defer func() {
-		onClose()
-		close(l.taskLoopDone)
-	}()
-
-	for {
-		select {
-		case <-l.done:
-			return
-		case t := <-l.tasks:
-			t.fn(l)
-			close(t.done)
-		}
-	}
-}
+func (l *Loop) runLoop(onClose func()) { _ = "STUB: not implemented"; return }
 
 // Close stops the loop after finishing the execution of the current task.
 // Other pending tasks will not be executed.
-func (l *Loop) Close() {
-	if err := l.Err(); err != nil {
-		return
-	}
-
-	l.err.Store(ErrClosed)
-
-	close(l.done)
-	<-l.taskLoopDone
-}
+func (l *Loop) Close() { _ = "STUB: not implemented"; return }
 
 // Run serially executes the submitted callback.
 // Blocking tasks must be cancelable by context.
 func (l *Loop) Run(ctx context.Context, t func(context.Context)) error {
-	if err := l.Err(); err != nil {
-		return err
-	}
-	done := make(chan struct{})
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	case <-l.done:
-		return ErrClosed
-	case l.tasks <- task{t, done}:
-		<-done
-
-		return nil
-	}
+	_ = "STUB: not implemented"
+	return nil
 }
 
 // The following methods implement context.Context for TaskLoop
 
 // Done returns a channel that's closed when the task loop has been stopped.
 func (l *Loop) Done() <-chan struct{} {
-	return l.done
+	_ = "STUB: not implemented"
+
+	// Err returns nil if the task loop is still running.
+	// Otherwise it return errClosed if the loop has been closed/stopped.
+	return nil
 }
 
-// Err returns nil if the task loop is still running.
-// Otherwise it return errClosed if the loop has been closed/stopped.
-func (l *Loop) Err() error {
-	select {
-	case <-l.done:
-		return ErrClosed
-	default:
-		return nil
-	}
-}
+func (l *Loop) Err() error { _ = "STUB: not implemented"; return nil }
 
 // Deadline returns the no valid time as task loops have no deadline.
 func (l *Loop) Deadline() (deadline time.Time, ok bool) {
-	return time.Time{}, false
+	_ = "STUB: not implemented"
+	return *new(time.Time), false
 }
 
 // Value is not supported for task loops.
-func (l *Loop) Value(any) any {
-	return nil
-}
+func (l *Loop) Value(any) any { _ = "STUB: not implemented"; return *new(any) }

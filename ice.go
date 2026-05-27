@@ -33,26 +33,7 @@ const (
 	ConnectionStateClosed
 )
 
-func (c ConnectionState) String() string {
-	switch c {
-	case ConnectionStateNew:
-		return "New"
-	case ConnectionStateChecking:
-		return "Checking"
-	case ConnectionStateConnected:
-		return "Connected"
-	case ConnectionStateCompleted:
-		return "Completed"
-	case ConnectionStateFailed:
-		return "Failed"
-	case ConnectionStateDisconnected:
-		return "Disconnected"
-	case ConnectionStateClosed:
-		return "Closed"
-	default:
-		return "Invalid"
-	}
-}
+func (c ConnectionState) String() string { _ = "STUB: not implemented"; return "" }
 
 // GatheringState describes the state of the candidate gathering process.
 type GatheringState int
@@ -71,18 +52,7 @@ const (
 	GatheringStateComplete
 )
 
-func (t GatheringState) String() string {
-	switch t {
-	case GatheringStateNew:
-		return "new"
-	case GatheringStateGathering:
-		return "gathering"
-	case GatheringStateComplete:
-		return "complete"
-	default:
-		return ErrUnknownType.Error()
-	}
-}
+func (t GatheringState) String() string { _ = "STUB: not implemented"; return "" }
 
 // ContinualGatheringPolicy defines the behavior for gathering ICE candidates.
 type ContinualGatheringPolicy int
@@ -92,16 +62,7 @@ const (
 	GatherContinually
 )
 
-func (c ContinualGatheringPolicy) String() string {
-	switch c {
-	case GatherOnce:
-		return "gather_once"
-	case GatherContinually:
-		return "gather_continually"
-	default:
-		return unknownStr
-	}
-}
+func (c ContinualGatheringPolicy) String() string { _ = "STUB: not implemented"; return "" }
 
 const (
 	unknownStr        = "unknown"

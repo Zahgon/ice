@@ -4,9 +4,7 @@
 package ice
 
 import (
-	"fmt"
 	"net"
-	"strings"
 )
 
 // AddressRewriteMode controls whether a rule replaces or appends candidates.
@@ -57,12 +55,8 @@ type AddressRewriteRule struct {
 }
 
 func validateIPString(ipStr string) (net.IP, bool, error) {
-	ip := net.ParseIP(ipStr)
-	if ip == nil {
-		return nil, false, ErrInvalidNAT1To1IPMapping
-	}
-
-	return ip, (ip.To4() != nil), nil
+	_ = "STUB: not implemented"
+	return *new(net.IP), false, nil
 }
 
 // ipMapping holds the mapping of local and external IP address
@@ -75,17 +69,9 @@ type ipMapping struct {
 	catchAllSet bool
 }
 
-func newIPMapping() ipMapping {
-	return ipMapping{
-		ipMap: make(map[string][]net.IP),
-	}
-}
+func newIPMapping() ipMapping { _ = "STUB: not implemented"; return *new(ipMapping) }
 
-func (m *ipMapping) addSoleIP(ip net.IP) {
-	m.ipSole = append(m.ipSole, ip)
-	m.valid = true
-	m.catchAllSet = true
-}
+func (m *ipMapping) addSoleIP(ip net.IP) { _ = "STUB: not implemented"; return }
 
 func addExternalMappings(
 	external []string,
@@ -94,36 +80,8 @@ func addExternalMappings(
 	localAddr net.IP,
 	localIsIPv4 bool,
 ) (bool, error) {
-	added := false
-
-	for _, raw := range external {
-		extIPStr := strings.TrimSpace(raw)
-		ipPair := strings.Split(extIPStr, "/")
-		if len(ipPair) != 1 {
-			return false, ErrInvalidNAT1To1IPMapping
-		}
-
-		extIP, isExtIPv4, err := validateIPString(ipPair[0])
-		if err != nil {
-			return false, err
-		}
-
-		targetLocalIPv4 := isExtIPv4
-		if hasLocalAddr {
-			targetLocalIPv4 = localIsIPv4
-		} else if ruleMapping.cidr != nil {
-			targetLocalIPv4 = ruleMapping.cidr.IP.To4() != nil
-		}
-
-		if !ruleMapping.isFamilyAllowed(targetLocalIPv4) {
-			continue
-		}
-
-		ruleMapping.addImplicitMapping(extIP, targetLocalIPv4, hasLocalAddr, localAddr)
-		added = true
-	}
-
-	return added, nil
+	_ = "STUB: not implemented"
+	return false, nil
 }
 
 func maybeMarkEmptyMapping(
@@ -133,72 +91,15 @@ func maybeMarkEmptyMapping(
 	localIsIPv4 bool,
 	localAddr net.IP,
 ) {
-	if added {
-		return
-	}
-
-	if hasLocalAddr {
-		if ruleMapping.isFamilyAllowed(localIsIPv4) {
-			family := ruleMapping.mappingForFamily(localIsIPv4)
-			family.ipMap[localAddr.String()] = nil
-			family.valid = true
-		}
-
-		return
-	}
-
-	if ruleMapping.allowIPv4 {
-		ruleMapping.ipv4Mapping.valid = true
-		ruleMapping.ipv4Mapping.catchAllSet = true
-	}
-	if ruleMapping.allowIPv6 {
-		ruleMapping.ipv6Mapping.valid = true
-		ruleMapping.ipv6Mapping.catchAllSet = true
-	}
+	_ = "STUB: not implemented"
+	return
 }
 
-func (m *ipMapping) addIPMapping(locIP, extIP net.IP) {
-	locIPStr := locIP.String()
+func (m *ipMapping) addIPMapping(locIP, extIP net.IP) { _ = "STUB: not implemented"; return }
 
-	m.ipMap[locIPStr] = append(m.ipMap[locIPStr], extIP)
-	m.valid = true
-}
+func cloneIPs(src []net.IP) []net.IP { _ = "STUB: not implemented"; return nil }
 
-func cloneIPs(src []net.IP) []net.IP {
-	if len(src) == 0 {
-		return nil
-	}
-
-	cloned := make([]net.IP, 0, len(src))
-	for _, ip := range src {
-		if ip == nil {
-			continue
-		}
-		copied := make(net.IP, len(ip))
-		copy(copied, ip)
-		cloned = append(cloned, copied)
-	}
-
-	return cloned
-}
-
-func (m *ipMapping) findExternalIPs(locIP net.IP) []net.IP {
-	if !m.valid {
-		return nil
-	}
-
-	if m.ipMap != nil {
-		if extIPs, ok := m.ipMap[locIP.String()]; ok && len(extIPs) > 0 {
-			return cloneIPs(extIPs)
-		}
-	}
-
-	if len(m.ipSole) > 0 {
-		return cloneIPs(m.ipSole)
-	}
-
-	return nil
-}
+func (m *ipMapping) findExternalIPs(locIP net.IP) []net.IP { _ = "STUB: not implemented"; return nil }
 
 type addressRewriteRuleMapping struct {
 	rule        AddressRewriteRule
@@ -210,24 +111,16 @@ type addressRewriteRuleMapping struct {
 	allowIPv6   bool
 }
 
-func (m *addressRewriteRuleMapping) hasMappings() bool {
-	return m.ipv4Mapping.valid || m.ipv6Mapping.valid
-}
+func (m *addressRewriteRuleMapping) hasMappings() bool { _ = "STUB: not implemented"; return false }
 
 func (m *addressRewriteRuleMapping) mappingForFamily(isIPv4 bool) *ipMapping {
-	if isIPv4 {
-		return &m.ipv4Mapping
-	}
-
-	return &m.ipv6Mapping
+	_ = "STUB: not implemented"
+	return nil
 }
 
 func (m *addressRewriteRuleMapping) isFamilyAllowed(isLocalIPv4 bool) bool {
-	if isLocalIPv4 {
-		return m.allowIPv4
-	}
-
-	return m.allowIPv6
+	_ = "STUB: not implemented"
+	return false
 }
 
 func (m *addressRewriteRuleMapping) addImplicitMapping(
@@ -236,12 +129,8 @@ func (m *addressRewriteRuleMapping) addImplicitMapping(
 	hasLocalAddr bool,
 	localAddr net.IP,
 ) {
-	mapping := m.mappingForFamily(isLocalIPv4)
-	if hasLocalAddr {
-		mapping.addIPMapping(localAddr, extIP)
-	} else {
-		mapping.addSoleIP(extIP)
-	}
+	_ = "STUB: not implemented"
+	return
 }
 
 type addressRewriteMapper struct {
@@ -250,114 +139,21 @@ type addressRewriteMapper struct {
 
 //nolint:gocognit,gocyclo,cyclop
 func newAddressRewriteMapper(rules []AddressRewriteRule) (*addressRewriteMapper, error) {
-	if len(rules) == 0 {
-		return nil, nil //nolint:nilnil
-	}
-
-	mapper := &addressRewriteMapper{
-		rulesByCandidateType: make(map[CandidateType][]*addressRewriteRuleMapping),
-	}
-
-	for _, rule := range rules {
-		candidateType := rule.AsCandidateType
-		if candidateType == CandidateTypeUnspecified {
-			candidateType = CandidateTypeHost
-		}
-		if candidateType == CandidateTypePeerReflexive {
-			return nil, ErrUnsupportedNAT1To1IPCandidateType
-		}
-
-		mode := rule.Mode
-		if mode == addressRewriteModeUnspecified {
-			mode = defaultAddressRewriteMode(candidateType)
-		}
-
-		ruleMapping := &addressRewriteRuleMapping{
-			rule:        rule,
-			mode:        mode,
-			ipv4Mapping: newIPMapping(),
-			ipv6Mapping: newIPMapping(),
-			allowIPv4:   true,
-			allowIPv6:   true,
-		}
-
-		if len(rule.Networks) > 0 {
-			ruleMapping.allowIPv4 = false
-			ruleMapping.allowIPv6 = false
-			for _, network := range rule.Networks {
-				if network.IsIPv4() {
-					ruleMapping.allowIPv4 = true
-				}
-				if network.IsIPv6() {
-					ruleMapping.allowIPv6 = true
-				}
-			}
-			if !ruleMapping.allowIPv4 && !ruleMapping.allowIPv6 {
-				continue
-			}
-		}
-		if rule.CIDR != "" {
-			_, ipNet, err := net.ParseCIDR(rule.CIDR)
-			if err != nil {
-				return nil, ErrInvalidNAT1To1IPMapping
-			}
-			ruleMapping.cidr = ipNet
-		}
-
-		var (
-			localAddr    net.IP
-			localIsIPv4  bool
-			hasLocalAddr bool
-			err          error
-		)
-		if trimmedLocal := strings.TrimSpace(rule.Local); trimmedLocal != "" {
-			localAddr, localIsIPv4, err = validateIPString(trimmedLocal)
-			if err != nil {
-				return nil, err
-			}
-			hasLocalAddr = true
-
-			if ruleMapping.cidr != nil && !ruleMapping.cidr.Contains(localAddr) {
-				return nil, fmt.Errorf("%w: Invalid local IP is outside CIDR", ErrInvalidNAT1To1IPMapping)
-			}
-		}
-
-		added, mapErr := addExternalMappings(rule.External, ruleMapping, hasLocalAddr, localAddr, localIsIPv4)
-		if mapErr != nil {
-			return nil, mapErr
-		}
-		maybeMarkEmptyMapping(ruleMapping, added, hasLocalAddr, localIsIPv4, localAddr)
-
-		if ruleMapping.hasMappings() {
-			mapper.rulesByCandidateType[candidateType] = append(mapper.rulesByCandidateType[candidateType], ruleMapping)
-		}
-	}
-
-	if len(mapper.rulesByCandidateType) == 0 {
-		return nil, nil //nolint:nilnil
-	}
-
-	return mapper, nil
+	_ = "STUB: not implemented"
+	return nil, nil
 }
 
-func (m *addressRewriteMapper) hasCandidateType(candidateType CandidateType) bool {
-	rules := m.rulesByCandidateType[candidateType]
-	for _, rule := range rules {
-		if rule.hasMappings() {
-			return true
-		}
-	}
+//nolint:nilnil
 
+//nolint:nilnil
+
+func (m *addressRewriteMapper) hasCandidateType(candidateType CandidateType) bool {
+	_ = "STUB: not implemented"
 	return false
 }
 
 func (m *addressRewriteMapper) shouldReplace(candidateType CandidateType) bool {
-	for _, rule := range m.rulesByCandidateType[candidateType] {
-		if rule.mode == AddressRewriteReplace {
-			return true
-		}
-	}
-
+	_ = "STUB: not implemented"
 	return false
 }
 
@@ -366,15 +162,8 @@ func (m *addressRewriteMapper) findExternalIPs(
 	localIPStr string,
 	iface string,
 ) ([]net.IP, bool, AddressRewriteMode, error) {
-	locIP, isLocIPv4, err := validateIPString(localIPStr)
-	if err != nil {
-		return nil, false, addressRewriteModeUnspecified, err
-	}
-
-	rules := m.rulesByCandidateType[candidateType]
-	ips, matched, mode := evaluateRewriteRules(rules, locIP, isLocIPv4, iface)
-
-	return ips, matched, mode, nil
+	_ = "STUB: not implemented"
+	return nil, false, *new(AddressRewriteMode), nil
 }
 
 func ruleMappingForLookup(
@@ -383,33 +172,13 @@ func ruleMappingForLookup(
 	isLocIPv4 bool,
 	iface string,
 ) (*ipMapping, bool) {
-	if rule.rule.Iface != "" && rule.rule.Iface != iface {
-		return nil, false
-	}
-	if rule.cidr != nil && !rule.cidr.Contains(locIP) {
-		return nil, false
-	}
-
-	ipMapping := rule.mappingForFamily(isLocIPv4)
-	if !ipMapping.valid {
-		return nil, false
-	}
-
-	return ipMapping, true
+	_ = "STUB: not implemented"
+	return nil, false
 }
 
 func catchAllSpecificity(rule *addressRewriteRuleMapping, iface string) int {
-	spec := 0
-	if rule.rule.Iface != "" {
-		spec += 2
-		if rule.cidr != nil {
-			spec++
-		}
-	} else if iface == "" && rule.cidr != nil {
-		spec++
-	}
-
-	return spec
+	_ = "STUB: not implemented"
+	return 0
 }
 
 func evaluateRewriteRules(
@@ -418,39 +187,6 @@ func evaluateRewriteRules(
 	isLocIPv4 bool,
 	iface string,
 ) (ips []net.IP, matched bool, mode AddressRewriteMode) {
-	var (
-		catchAll     []net.IP
-		catchAllMode AddressRewriteMode
-		hasCatchAll  bool
-		bestSpec     = -1
-	)
-
-	for _, rule := range rules {
-		ipMapping, ok := ruleMappingForLookup(rule, locIP, isLocIPv4, iface)
-		if !ok {
-			continue
-		}
-
-		if explicit, ok := ipMapping.ipMap[locIP.String()]; ok {
-			cloned := cloneIPs(explicit)
-
-			return cloned, true, rule.mode
-		}
-
-		if ipMapping.catchAllSet {
-			spec := catchAllSpecificity(rule, iface)
-			if !hasCatchAll || spec > bestSpec {
-				catchAll = cloneIPs(ipMapping.ipSole)
-				catchAllMode = rule.mode
-				hasCatchAll = true
-				bestSpec = spec
-			}
-		}
-	}
-
-	if hasCatchAll {
-		return catchAll, true, catchAllMode
-	}
-
-	return nil, false, addressRewriteModeUnspecified
+	_ = "STUB: not implemented"
+	return nil, false, *new(AddressRewriteMode)
 }

@@ -4,7 +4,6 @@
 package ice
 
 import (
-	"fmt"
 	"net"
 	"time"
 
@@ -45,36 +44,14 @@ type UniversalUDPMuxParams struct {
 
 // NewUniversalUDPMuxDefault creates an implementation of UniversalUDPMux embedding UDPMux.
 func NewUniversalUDPMuxDefault(params UniversalUDPMuxParams) *UniversalUDPMuxDefault {
-	if params.Logger == nil {
-		params.Logger = logging.NewDefaultLoggerFactory().NewLogger("ice")
-	}
-	if params.XORMappedAddrCacheTTL == 0 {
-		params.XORMappedAddrCacheTTL = time.Second * 25
-	}
-
-	mux := &UniversalUDPMuxDefault{
-		params:       params,
-		xorMappedMap: make(map[string]*xorMapped),
-	}
-
-	// Wrap UDP connection, process server reflexive messages
-	// before they are passed to the UDPMux connection handler (connWorker)
-	mux.params.UDPConn = &udpConn{
-		PacketConn: params.UDPConn,
-		mux:        mux,
-		logger:     params.Logger,
-	}
-
-	// Embed UDPMux
-	udpMuxParams := UDPMuxParams{
-		Logger:  params.Logger,
-		UDPConn: mux.params.UDPConn,
-		Net:     mux.params.Net,
-	}
-	mux.UDPMuxDefault = NewUDPMuxDefault(udpMuxParams)
-
-	return mux
+	_ = "STUB: not implemented"
+	return nil
 }
+
+// Wrap UDP connection, process server reflexive messages
+// before they are passed to the UDPMux connection handler (connWorker)
+
+// Embed UDPMux
 
 // udpConn is a wrapper around UDPMux conn that overrides ReadFrom and handles STUN/TURN packets.
 type udpConn struct {
@@ -86,86 +63,43 @@ type udpConn struct {
 // GetRelayedAddr creates relayed connection to the given TURN service and returns the relayed addr.
 // Not implemented yet.
 func (m *UniversalUDPMuxDefault) GetRelayedAddr(net.Addr, time.Duration) (*net.Addr, error) {
-	return nil, errNotImplemented
+	_ = "STUB: not implemented"
+	return nil, nil
+
+	// GetConnForURL add uniques to the muxed connection by concatenating ufrag and URL
+	// (e.g. STUN URL) to be able to support multiple STUN/TURN servers
+	// and return a unique connection per server.
 }
 
-// GetConnForURL add uniques to the muxed connection by concatenating ufrag and URL
-// (e.g. STUN URL) to be able to support multiple STUN/TURN servers
-// and return a unique connection per server.
 func (m *UniversalUDPMuxDefault) GetConnForURL(ufrag string, url string, addr net.Addr) (net.PacketConn, error) {
-	return m.UDPMuxDefault.GetConn(fmt.Sprintf("%s%s", ufrag, url), addr)
+	_ = "STUB: not implemented"
+	return *new(net.PacketConn), nil
 }
 
 // ReadFrom is called by UDPMux connWorker and handles packets coming from the STUN server discovering a mapped address.
 // It passes processed packets further to the UDPMux (maybe this is not really necessary).
 func (c *udpConn) ReadFrom(p []byte) (n int, addr net.Addr, err error) {
-	n, addr, err = c.PacketConn.ReadFrom(p)
-	if err != nil {
-		return n, addr, err
-	}
-
-	if stun.IsMessage(p[:n]) { //nolint:nestif
-		msg := &stun.Message{
-			Raw: append([]byte{}, p[:n]...),
-		}
-
-		if err = msg.Decode(); err != nil {
-			c.logger.Warnf("Failed to handle decode ICE from %s: %v", addr.String(), err)
-
-			return n, addr, nil
-		}
-
-		udpAddr, ok := addr.(*net.UDPAddr)
-		if !ok {
-			// Message about this err will be logged in the UDPMux
-			return n, addr, err
-		}
-
-		if c.mux.isXORMappedResponse(msg, udpAddr.String()) {
-			err = c.mux.handleXORMappedResponse(udpAddr, msg)
-			if err != nil {
-				c.logger.Debugf("%w: %v", errGetXorMappedAddrResponse, err)
-				err = nil
-			}
-
-			return n, addr, err
-		}
-	}
-
-	return n, addr, err
+	_ = "STUB: not implemented"
+	return 0, *new(net.Addr), nil
 }
+
+//nolint:nestif
+
+// Message about this err will be logged in the UDPMux
 
 // isXORMappedResponse indicates whether the message is a XORMappedAddress and is coming from the known STUN server.
 func (m *UniversalUDPMuxDefault) isXORMappedResponse(msg *stun.Message, stunAddr string) bool {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	// Check first if it is a STUN server address,
-	// because remote peer can also send similar messages but as a BindingSuccess.
-	_, ok := m.xorMappedMap[stunAddr]
-	_, err := msg.Get(stun.AttrXORMappedAddress)
-
-	return err == nil && ok
+	_ = "STUB: not implemented"
+	return false
 }
+
+// Check first if it is a STUN server address,
+// because remote peer can also send similar messages but as a BindingSuccess.
 
 // handleXORMappedResponse parses response from the STUN server, extracts XORMappedAddress attribute.
 // and set the mapped address for the server.
 func (m *UniversalUDPMuxDefault) handleXORMappedResponse(stunAddr *net.UDPAddr, msg *stun.Message) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
-	mappedAddr, ok := m.xorMappedMap[stunAddr.String()]
-	if !ok {
-		return errNoXorAddrMapping
-	}
-
-	var addr stun.XORMappedAddress
-	if err := addr.GetFrom(msg); err != nil {
-		return err
-	}
-
-	m.xorMappedMap[stunAddr.String()] = mappedAddr
-	mappedAddr.SetAddr(&addr)
-
+	_ = "STUB: not implemented"
 	return nil
 }
 
@@ -177,78 +111,33 @@ func (m *UniversalUDPMuxDefault) GetXORMappedAddr(
 	serverAddr net.Addr,
 	deadline time.Duration,
 ) (*stun.XORMappedAddress, error) {
-	m.mu.Lock()
-	mappedAddr, ok := m.xorMappedMap[serverAddr.String()]
-	// If we already have a mapping for this STUN server (address already received)
-	// and if it is not too old we return it without making a new request to STUN server
-	if ok {
-		if mappedAddr.expired() {
-			mappedAddr.closeWaiters()
-			delete(m.xorMappedMap, serverAddr.String())
-			ok = false
-		} else if mappedAddr.pending() {
-			ok = false
-		}
-	}
-	m.mu.Unlock()
-	if ok {
-		return mappedAddr.addr, nil
-	}
-
-	// Otherwise, make a STUN request to discover the address
-	// or wait for already sent request to complete
-	waitAddrReceived, err := m.writeSTUN(serverAddr)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %s", errWriteSTUNMessage, err) //nolint:errorlint
-	}
-
-	// Block until response was handled by the connWorker routine and XORMappedAddress was updated
-	select {
-	case <-waitAddrReceived:
-		// When channel closed, addr was obtained
-		m.mu.Lock()
-		mappedAddr := *m.xorMappedMap[serverAddr.String()]
-		m.mu.Unlock()
-		if mappedAddr.addr == nil {
-			return nil, errNoXorAddrMapping
-		}
-
-		return mappedAddr.addr, nil
-	case <-time.After(deadline):
-		return nil, errXORMappedAddrTimeout
-	}
+	_ = "STUB: not implemented"
+	return nil, nil
 }
+
+// If we already have a mapping for this STUN server (address already received)
+// and if it is not too old we return it without making a new request to STUN server
+
+// Otherwise, make a STUN request to discover the address
+// or wait for already sent request to complete
+
+//nolint:errorlint
+
+// Block until response was handled by the connWorker routine and XORMappedAddress was updated
+
+// When channel closed, addr was obtained
 
 // writeSTUN sends a STUN request via UDP conn.
 //
 // The returned channel is closed when the STUN response has been received.
 // Method is safe for concurrent use.
 func (m *UniversalUDPMuxDefault) writeSTUN(serverAddr net.Addr) (chan struct{}, error) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
-	// If record present in the map, we already sent a STUN request,
-	// just wait when waitAddrReceived will be closed
-	addrMap, ok := m.xorMappedMap[serverAddr.String()]
-	if !ok {
-		addrMap = &xorMapped{
-			expiresAt:        time.Now().Add(m.params.XORMappedAddrCacheTTL),
-			waitAddrReceived: make(chan struct{}),
-		}
-		m.xorMappedMap[serverAddr.String()] = addrMap
-	}
-
-	req, err := stun.Build(stun.BindingRequest, stun.TransactionID)
-	if err != nil {
-		return nil, err
-	}
-
-	if _, err = m.params.UDPConn.WriteTo(req.Raw, serverAddr); err != nil {
-		return nil, err
-	}
-
-	return addrMap.waitAddrReceived, nil
+	_ = "STUB: not implemented"
+	return nil, nil
 }
+
+// If record present in the map, we already sent a STUN request,
+// just wait when waitAddrReceived will be closed
 
 type xorMapped struct {
 	addr             *stun.XORMappedAddress
@@ -256,26 +145,14 @@ type xorMapped struct {
 	expiresAt        time.Time
 }
 
-func (a *xorMapped) closeWaiters() {
-	select {
-	case <-a.waitAddrReceived:
-		// Notify was close, ok, that means we received duplicate response just exit
-		break
-	default:
-		// Notify tha twe have a new addr
-		close(a.waitAddrReceived)
-	}
-}
+func (a *xorMapped) closeWaiters() { _ = "STUB: not implemented"; return }
 
-func (a *xorMapped) pending() bool {
-	return a.addr == nil
-}
+// Notify was close, ok, that means we received duplicate response just exit
 
-func (a *xorMapped) expired() bool {
-	return a.expiresAt.Before(time.Now())
-}
+// Notify tha twe have a new addr
 
-func (a *xorMapped) SetAddr(addr *stun.XORMappedAddress) {
-	a.addr = addr
-	a.closeWaiters()
-}
+func (a *xorMapped) pending() bool { _ = "STUB: not implemented"; return false }
+
+func (a *xorMapped) expired() bool { _ = "STUB: not implemented"; return false }
+
+func (a *xorMapped) SetAddr(addr *stun.XORMappedAddress) { _ = "STUB: not implemented"; return }

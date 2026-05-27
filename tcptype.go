@@ -3,8 +3,6 @@
 
 package ice
 
-import "strings"
-
 // TCPType is the type of ICE TCP candidate as described in
 // https://tools.ietf.org/html/rfc6544#section-4.5
 type TCPType int
@@ -22,30 +20,6 @@ const (
 )
 
 // NewTCPType creates a new TCPType from string.
-func NewTCPType(value string) TCPType {
-	switch strings.ToLower(value) {
-	case "active":
-		return TCPTypeActive
-	case "passive":
-		return TCPTypePassive
-	case "so":
-		return TCPTypeSimultaneousOpen
-	default:
-		return TCPTypeUnspecified
-	}
-}
+func NewTCPType(value string) TCPType { _ = "STUB: not implemented"; return *new(TCPType) }
 
-func (t TCPType) String() string {
-	switch t {
-	case TCPTypeUnspecified:
-		return ""
-	case TCPTypeActive:
-		return "active"
-	case TCPTypePassive:
-		return "passive"
-	case TCPTypeSimultaneousOpen:
-		return "so"
-	default:
-		return ErrUnknownType.Error()
-	}
-}
+func (t TCPType) String() string { _ = "STUB: not implemented"; return "" }

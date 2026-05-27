@@ -58,16 +58,11 @@ const (
 	maxBindingRequestTimeout = 4000 * time.Millisecond
 )
 
-func defaultCandidateTypes() []CandidateType {
-	return []CandidateType{CandidateTypeHost, CandidateTypeServerReflexive, CandidateTypeRelay}
-}
+func defaultCandidateTypes() []CandidateType { _ = "STUB: not implemented"; return nil }
 
 func defaultRelayAcceptanceMinWaitFor(candidateTypes []CandidateType) time.Duration {
-	if len(candidateTypes) == 1 && candidateTypes[0] == CandidateTypeRelay {
-		return defaultRelayOnlyAcceptanceMinWait
-	}
-
-	return defaultRelayAcceptanceMinWait
+	_ = "STUB: not implemented"
+	return *new(time.Duration)
 }
 
 // AgentConfig collects the arguments to ice.Agent construction into
@@ -247,76 +242,7 @@ type AgentConfig struct {
 }
 
 // initWithDefaults populates an agent and falls back to defaults if fields are unset.
-func (config *AgentConfig) initWithDefaults(agent *Agent) { //nolint:cyclop
-	if config.MaxBindingRequests == nil {
-		agent.maxBindingRequests = defaultMaxBindingRequests
-	} else {
-		agent.maxBindingRequests = *config.MaxBindingRequests
-	}
-
-	if config.HostAcceptanceMinWait == nil {
-		agent.hostAcceptanceMinWait = defaultHostAcceptanceMinWait
-	} else {
-		agent.hostAcceptanceMinWait = *config.HostAcceptanceMinWait
-	}
-
-	if config.SrflxAcceptanceMinWait == nil {
-		agent.srflxAcceptanceMinWait = defaultSrflxAcceptanceMinWait
-	} else {
-		agent.srflxAcceptanceMinWait = *config.SrflxAcceptanceMinWait
-	}
-
-	if config.PrflxAcceptanceMinWait == nil {
-		agent.prflxAcceptanceMinWait = defaultPrflxAcceptanceMinWait
-	} else {
-		agent.prflxAcceptanceMinWait = *config.PrflxAcceptanceMinWait
-	}
-
-	if config.RelayAcceptanceMinWait == nil {
-		agent.relayAcceptanceMinWait = defaultRelayAcceptanceMinWaitFor(config.CandidateTypes)
-	} else {
-		agent.relayAcceptanceMinWait = *config.RelayAcceptanceMinWait
-	}
-
-	if config.STUNGatherTimeout == nil {
-		agent.stunGatherTimeout = defaultSTUNGatherTimeout
-	} else {
-		agent.stunGatherTimeout = *config.STUNGatherTimeout
-	}
-
-	if config.TCPPriorityOffset == nil {
-		agent.tcpPriorityOffset = defaultTCPPriorityOffset
-	} else {
-		agent.tcpPriorityOffset = *config.TCPPriorityOffset
-	}
-
-	if config.DisconnectedTimeout == nil {
-		agent.disconnectedTimeout = defaultDisconnectedTimeout
-	} else {
-		agent.disconnectedTimeout = *config.DisconnectedTimeout
-	}
-
-	if config.FailedTimeout == nil {
-		agent.failedTimeout = defaultFailedTimeout
-	} else {
-		agent.failedTimeout = *config.FailedTimeout
-	}
-
-	if config.KeepaliveInterval == nil {
-		agent.keepaliveInterval = defaultKeepaliveInterval
-	} else {
-		agent.keepaliveInterval = *config.KeepaliveInterval
-	}
-
-	if config.CheckInterval == nil {
-		agent.checkInterval = defaultCheckInterval
-	} else {
-		agent.checkInterval = *config.CheckInterval
-	}
-
-	if len(config.CandidateTypes) == 0 {
-		agent.candidateTypes = defaultCandidateTypes()
-	} else {
-		agent.candidateTypes = config.CandidateTypes
-	}
+func (config *AgentConfig) initWithDefaults(agent *Agent) {
+	_ = "STUB: not implemented" //nolint:cyclop
+	return
 }

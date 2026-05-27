@@ -27,30 +27,12 @@ var (
 )
 
 // HTTP Listener to get ICE Credentials from remote Peer.
-func remoteAuth(_ http.ResponseWriter, r *http.Request) {
-	if err := r.ParseForm(); err != nil {
-		panic(err)
-	}
-
-	remoteAuthChannel <- r.PostForm["ufrag"][0]
-	remoteAuthChannel <- r.PostForm["pwd"][0]
-}
+func remoteAuth(_ http.ResponseWriter, r *http.Request) { _ = "STUB: not implemented"; return }
 
 // HTTP Listener to get ICE Candidate from remote Peer.
-func remoteCandidate(_ http.ResponseWriter, r *http.Request) {
-	if err := r.ParseForm(); err != nil {
-		panic(err)
-	}
+func remoteCandidate(_ http.ResponseWriter, r *http.Request) { _ = "STUB: not implemented"; return }
 
-	c, err := ice.UnmarshalCandidate(r.PostForm["candidate"][0])
-	if err != nil {
-		panic(err)
-	}
-
-	if err := iceAgent.AddRemoteCandidate(c); err != nil { //nolint:contextcheck
-		panic(err)
-	}
-}
+//nolint:contextcheck
 
 func main() { //nolint
 	var (

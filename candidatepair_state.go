@@ -25,17 +25,4 @@ const (
 	CandidatePairStateSucceeded
 )
 
-func (c CandidatePairState) String() string {
-	switch c {
-	case CandidatePairStateWaiting:
-		return "waiting"
-	case CandidatePairStateInProgress:
-		return "in-progress"
-	case CandidatePairStateFailed:
-		return "failed"
-	case CandidatePairStateSucceeded:
-		return "succeeded"
-	}
-
-	return "Unknown candidate pair state"
-}
+func (c CandidatePairState) String() string { _ = "STUB: not implemented"; return "" }

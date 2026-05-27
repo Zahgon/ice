@@ -3,11 +3,6 @@
 
 package ice
 
-import (
-	"net"
-	"net/netip"
-)
-
 const (
 	// These preference values come from libwebrtc
 	//nolint:lll
@@ -43,86 +38,19 @@ type CandidateRelayConfig struct {
 
 // NewCandidateRelay creates a new relay candidate.
 func NewCandidateRelay(config *CandidateRelayConfig) (*CandidateRelay, error) {
-	candidateID := config.CandidateID
-
-	if candidateID == "" {
-		candidateID = globalCandidateIDGenerator.Generate()
-	}
-
-	ipAddr, err := netip.ParseAddr(config.Address)
-	if err != nil {
-		return nil, err
-	}
-
-	networkType, err := determineNetworkType(config.Network, ipAddr)
-	if err != nil {
-		return nil, err
-	}
-
-	return &CandidateRelay{
-		candidateBase: candidateBase{
-			id:            candidateID,
-			networkType:   networkType,
-			candidateType: CandidateTypeRelay,
-			address:       config.Address,
-			port:          config.Port,
-			resolvedAddr: &net.UDPAddr{
-				IP:   ipAddr.AsSlice(),
-				Port: config.Port,
-				Zone: ipAddr.Zone(),
-			},
-			component:          config.Component,
-			foundationOverride: config.Foundation,
-			priorityOverride:   config.Priority,
-			relatedAddress: &CandidateRelatedAddress{
-				Address: config.RelAddr,
-				Port:    config.RelPort,
-			},
-			relayLocalPreference: relayProtocolPreference(config.RelayProtocol),
-		},
-		relayProtocol: config.RelayProtocol,
-		onClose:       config.OnClose,
-	}, nil
+	_ = "STUB: not implemented"
+	return nil, nil
 }
 
 // RelayProtocol returns the protocol used between the endpoint and the relay server.
-func (c *CandidateRelay) RelayProtocol() string {
-	return c.relayProtocol
-}
+func (c *CandidateRelay) RelayProtocol() string { _ = "STUB: not implemented"; return "" }
 
-func (c *CandidateRelay) close() error {
-	err := c.candidateBase.close()
-	if c.onClose != nil {
-		err = c.onClose()
-		c.onClose = nil
-	}
-
-	return err
-}
+func (c *CandidateRelay) close() error { _ = "STUB: not implemented"; return nil }
 
 func (c *CandidateRelay) copy() (Candidate, error) {
-	cc, err := c.candidateBase.copy()
-	if err != nil {
-		return nil, err
-	}
-
-	if ccr, ok := cc.(*CandidateRelay); ok {
-		ccr.relayProtocol = c.relayProtocol
-	}
-
-	return cc, nil
+	_ = "STUB: not implemented"
+	return *new(Candidate), nil
 }
 
 // relayProtocolPreference returns the preference for the relay protocol.
-func relayProtocolPreference(relayProtocol string) uint16 {
-	switch relayProtocol {
-	case relayProtocolTLS:
-		return preferenceRelayTLS
-	case tcp:
-		return preferenceRelayTCP
-	case relayProtocolDTLS:
-		return preferenceRelayDTLS
-	default:
-		return preferenceRelayUDP
-	}
-}
+func relayProtocolPreference(relayProtocol string) uint16 { _ = "STUB: not implemented"; return 0 }

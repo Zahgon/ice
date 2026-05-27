@@ -12,13 +12,7 @@ type Error struct {
 }
 
 // Store updates the value of the atomic variable.
-func (a *Error) Store(err error) {
-	a.v.Store(struct{ error }{err})
-}
+func (a *Error) Store(err error) { _ = "STUB: not implemented"; return }
 
 // Load retrieves the current value of the atomic variable.
-func (a *Error) Load() error {
-	err, _ := a.v.Load().(struct{ error })
-
-	return err.error
-}
+func (a *Error) Load() error { _ = "STUB: not implemented"; return nil }

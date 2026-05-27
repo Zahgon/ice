@@ -36,52 +36,15 @@ var (
 )
 
 // getRTT returns the current RTT for the selected candidate pair.
-func getRTT() string {
-	if selectedLocalCandidateID == "" || selectedRemoteCandidateID == "" {
-		return rttNotAvailable
-	}
-
-	stats := iceAgent.GetCandidatePairsStats()
-	for _, stat := range stats {
-		if stat.LocalCandidateID == selectedLocalCandidateID && stat.RemoteCandidateID == selectedRemoteCandidateID {
-			if stat.CurrentRoundTripTime > 0 {
-				return fmt.Sprintf("%.2fms", stat.CurrentRoundTripTime*1000)
-			}
-
-			return rttNotAvailable
-		}
-	}
-
-	return rttNotAvailable
-}
+func getRTT() string { _ = "STUB: not implemented"; return "" }
 
 // HTTP Listener to get ICE Credentials from remote Peer.
-func remoteAuth(_ http.ResponseWriter, r *http.Request) {
-	if err := r.ParseForm(); err != nil {
-		panic(err)
-	}
-
-	remoteAuthChannel <- r.PostForm["ufrag"][0]
-	remoteAuthChannel <- r.PostForm["pwd"][0]
-}
+func remoteAuth(_ http.ResponseWriter, r *http.Request) { _ = "STUB: not implemented"; return }
 
 // HTTP Listener to get ICE Candidate from remote Peer.
-func remoteCandidate(_ http.ResponseWriter, r *http.Request) {
-	if err := r.ParseForm(); err != nil {
-		panic(err)
-	}
+func remoteCandidate(_ http.ResponseWriter, r *http.Request) { _ = "STUB: not implemented"; return }
 
-	c, err := ice.UnmarshalCandidate(r.PostForm["candidate"][0])
-	if err != nil {
-		panic(err)
-	}
-
-	if err := iceAgent.AddRemoteCandidate(c); err != nil { //nolint:contextcheck
-		panic(err)
-	}
-
-	fmt.Printf("Added remote candidate: %s\n", c)
-}
+//nolint:contextcheck
 
 func main() { //nolint:cyclop,maintidx
 	var (

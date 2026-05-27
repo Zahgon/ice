@@ -6,10 +6,6 @@
 //nolint:dupl
 package ice
 
-import (
-	"net/netip"
-)
-
 // CandidatePeerReflexive ...
 type CandidatePeerReflexive struct {
 	candidateBase
@@ -30,36 +26,6 @@ type CandidatePeerReflexiveConfig struct {
 
 // NewCandidatePeerReflexive creates a new peer reflective candidate.
 func NewCandidatePeerReflexive(config *CandidatePeerReflexiveConfig) (*CandidatePeerReflexive, error) {
-	ipAddr, err := netip.ParseAddr(config.Address)
-	if err != nil {
-		return nil, err
-	}
-
-	networkType, err := determineNetworkType(config.Network, ipAddr)
-	if err != nil {
-		return nil, err
-	}
-
-	candidateID := config.CandidateID
-	if candidateID == "" {
-		candidateID = globalCandidateIDGenerator.Generate()
-	}
-
-	return &CandidatePeerReflexive{
-		candidateBase: candidateBase{
-			id:                 candidateID,
-			networkType:        networkType,
-			candidateType:      CandidateTypePeerReflexive,
-			address:            config.Address,
-			port:               config.Port,
-			resolvedAddr:       createAddr(networkType, ipAddr, config.Port),
-			component:          config.Component,
-			foundationOverride: config.Foundation,
-			priorityOverride:   config.Priority,
-			relatedAddress: &CandidateRelatedAddress{
-				Address: config.RelAddr,
-				Port:    config.RelPort,
-			},
-		},
-	}, nil
+	_ = "STUB: not implemented"
+	return nil, nil
 }

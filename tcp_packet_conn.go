@@ -4,12 +4,9 @@
 package ice
 
 import (
-	"errors"
-	"fmt"
 	"io"
 	"net"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/pion/logging"
@@ -24,59 +21,15 @@ type bufferedConn struct {
 }
 
 func newBufferedConn(conn net.Conn, bufSize int, logger logging.LeveledLogger) net.Conn {
-	buf := packetio.NewBuffer()
-	if bufSize > 0 {
-		buf.SetLimitSize(bufSize)
-	}
-
-	bc := &bufferedConn{
-		Conn:   conn,
-		buf:    buf,
-		logger: logger,
-	}
-
-	go bc.writeProcess()
-
-	return bc
+	_ = "STUB: not implemented"
+	return *new(net.Conn)
 }
 
-func (bc *bufferedConn) Write(b []byte) (int, error) {
-	n, err := bc.buf.Write(b)
-	if err != nil {
-		return n, err
-	}
+func (bc *bufferedConn) Write(b []byte) (int, error) { _ = "STUB: not implemented"; return 0, nil }
 
-	return n, nil
-}
+func (bc *bufferedConn) writeProcess() { _ = "STUB: not implemented"; return }
 
-func (bc *bufferedConn) writeProcess() {
-	pktBuf := make([]byte, receiveMTU)
-	for atomic.LoadInt32(&bc.closed) == 0 {
-		n, err := bc.buf.Read(pktBuf)
-		if errors.Is(err, io.EOF) {
-			return
-		}
-
-		if err != nil {
-			bc.logger.Warnf("Failed to read from buffer: %s", err)
-
-			continue
-		}
-
-		if _, err := bc.Conn.Write(pktBuf[:n]); err != nil {
-			bc.logger.Warnf("Failed to write: %s", err)
-
-			continue
-		}
-	}
-}
-
-func (bc *bufferedConn) Close() error {
-	atomic.StoreInt32(&bc.closed, 1)
-	_ = bc.buf.Close()
-
-	return bc.Conn.Close()
-}
+func (bc *bufferedConn) Close() error { _ = "STUB: not implemented"; return nil }
 
 type tcpPacketConn struct {
 	params *tcpPacketParams
@@ -107,277 +60,62 @@ type tcpPacketParams struct {
 	AliveDuration time.Duration
 }
 
-func newTCPPacketConn(params tcpPacketParams) *tcpPacketConn {
-	packet := &tcpPacketConn{
-		params: &params,
+func newTCPPacketConn(params tcpPacketParams) *tcpPacketConn { _ = "STUB: not implemented"; return nil }
 
-		conns: map[string]net.Conn{},
-
-		recvChan:   make(chan streamingPacket, params.ReadBuffer),
-		closedChan: make(chan struct{}),
-	}
-
-	if params.AliveDuration > 0 {
-		packet.aliveTimer = time.AfterFunc(params.AliveDuration, func() {
-			packet.params.Logger.Warn("close tcp packet conn by alive timeout")
-			_ = packet.Close()
-		})
-	}
-
-	return packet
-}
-
-func (t *tcpPacketConn) ClearAliveTimer() {
-	t.mu.Lock()
-	if t.aliveTimer != nil {
-		t.aliveTimer.Stop()
-	}
-	t.mu.Unlock()
-}
+func (t *tcpPacketConn) ClearAliveTimer() { _ = "STUB: not implemented"; return }
 
 func (t *tcpPacketConn) AddConn(conn net.Conn, firstPacketData []byte) error {
-	t.params.Logger.Infof(
-		"Added connection: %s remote %s to local %s",
-		conn.RemoteAddr().Network(),
-		conn.RemoteAddr(),
-		conn.LocalAddr(),
-	)
-
-	t.mu.Lock()
-	defer t.mu.Unlock()
-
-	select {
-	case <-t.closedChan:
-		return io.ErrClosedPipe
-	default:
-	}
-
-	if _, ok := t.conns[conn.RemoteAddr().String()]; ok {
-		return fmt.Errorf("%w: %s", errConnectionAddrAlreadyExist, conn.RemoteAddr().String())
-	}
-
-	if t.params.WriteBuffer > 0 {
-		conn = newBufferedConn(conn, t.params.WriteBuffer, t.params.Logger)
-	}
-	t.conns[conn.RemoteAddr().String()] = conn
-
-	t.wg.Add(1)
-	go func() {
-		defer t.wg.Done()
-		if firstPacketData != nil {
-			select {
-			case <-t.closedChan:
-				// NOTE: recvChan can fill up and never drain in edge
-				// cases while closing a connection, which can cause the
-				// packetConn to never finish closing. Bail out early
-				// here to prevent that.
-				return
-			case t.recvChan <- streamingPacket{firstPacketData, conn.RemoteAddr(), nil}:
-			}
-		}
-		t.startReading(conn)
-	}()
-
+	_ = "STUB: not implemented"
 	return nil
 }
 
-func (t *tcpPacketConn) startReading(conn net.Conn) {
-	buf := make([]byte, receiveMTU)
+// NOTE: recvChan can fill up and never drain in edge
+// cases while closing a connection, which can cause the
+// packetConn to never finish closing. Bail out early
+// here to prevent that.
 
-	for {
-		n, err := readStreamingPacket(conn, buf)
-		if err != nil {
-			t.params.Logger.Warnf("Failed to read streaming packet: %s", err)
-			last := t.removeConn(conn)
-			// Only propagate connection closure errors if no other open connection exists.
-			if last || (!errors.Is(err, io.EOF) && !errors.Is(err, net.ErrClosed)) {
-				t.handleRecv(streamingPacket{nil, conn.RemoteAddr(), err})
-			}
+func (t *tcpPacketConn) startReading(conn net.Conn) { _ = "STUB: not implemented"; return }
 
-			return
-		}
+// Only propagate connection closure errors if no other open connection exists.
 
-		data := make([]byte, n)
-		copy(data, buf[:n])
+func (t *tcpPacketConn) handleRecv(pkt streamingPacket) { _ = "STUB: not implemented"; return }
 
-		t.handleRecv(streamingPacket{data, conn.RemoteAddr(), nil})
-	}
-}
-
-func (t *tcpPacketConn) handleRecv(pkt streamingPacket) {
-	t.mu.Lock()
-
-	recvChan := t.recvChan
-	if t.isClosed() {
-		recvChan = nil
-	}
-
-	t.mu.Unlock()
-
-	select {
-	case recvChan <- pkt:
-	case <-t.closedChan:
-	}
-}
-
-func (t *tcpPacketConn) isClosed() bool {
-	select {
-	case <-t.closedChan:
-		return true
-	default:
-		return false
-	}
-}
+func (t *tcpPacketConn) isClosed() bool { _ = "STUB: not implemented"; return false }
 
 // WriteTo is for passive and s-o candidates.
 func (t *tcpPacketConn) ReadFrom(b []byte) (n int, rAddr net.Addr, err error) {
-	pkt, ok := <-t.recvChan
-
-	if !ok {
-		return 0, nil, io.ErrClosedPipe
-	}
-
-	if pkt.Err != nil {
-		return 0, pkt.RAddr, pkt.Err
-	}
-
-	if cap(b) < len(pkt.Data) {
-		return 0, pkt.RAddr, io.ErrShortBuffer
-	}
-
-	n = len(pkt.Data)
-	copy(b, pkt.Data[:n])
-
-	return n, pkt.RAddr, err
+	_ = "STUB: not implemented"
+	return 0, *new(net.Addr), nil
 }
 
 // WriteTo is for active and s-o candidates.
 func (t *tcpPacketConn) WriteTo(buf []byte, rAddr net.Addr) (n int, err error) {
-	t.mu.Lock()
-	conn, ok := t.conns[rAddr.String()]
-	t.mu.Unlock()
-
-	if !ok {
-		return 0, io.ErrClosedPipe
-	}
-
-	n, err = writeStreamingPacket(conn, buf)
-	if err != nil {
-		t.params.Logger.Tracef("%w %s", errWrite, rAddr)
-
-		return n, err
-	}
-
-	return n, err
+	_ = "STUB: not implemented"
+	return 0, nil
 }
 
-func (t *tcpPacketConn) closeAndLogError(closer io.Closer) {
-	err := closer.Close()
-	if err != nil {
-		t.params.Logger.Warnf("%v: %s", errClosingConnection, err)
-	}
-}
+func (t *tcpPacketConn) closeAndLogError(closer io.Closer) { _ = "STUB: not implemented"; return }
 
-func (t *tcpPacketConn) removeConn(conn net.Conn) bool {
-	t.mu.Lock()
-	defer t.mu.Unlock()
+func (t *tcpPacketConn) removeConn(conn net.Conn) bool { _ = "STUB: not implemented"; return false }
 
-	t.closeAndLogError(conn)
+// wait for some time to flush pending writes
 
-	// wait for some time to flush pending writes
-	_ = conn.SetWriteDeadline(time.Now().Add(5 * time.Second))
-	// read deadline as well just in case
-	_ = conn.SetReadDeadline(time.Now().Add(5 * time.Second))
+// read deadline as well just in case
 
-	delete(t.conns, conn.RemoteAddr().String())
+func (t *tcpPacketConn) Close() error { _ = "STUB: not implemented"; return nil }
 
-	return len(t.conns) == 0
-}
+// wait for some time to flush pending writes
 
-func (t *tcpPacketConn) Close() error {
-	t.mu.Lock()
+// read deadline as well just in case
 
-	var shouldCloseRecvChan bool
-	t.closeOnce.Do(func() {
-		close(t.closedChan)
-		shouldCloseRecvChan = true
-		if t.aliveTimer != nil {
-			t.aliveTimer.Stop()
-		}
-	})
+func (t *tcpPacketConn) LocalAddr() net.Addr { _ = "STUB: not implemented"; return *new(net.Addr) }
 
-	for _, conn := range t.conns {
-		t.closeAndLogError(conn)
+func (t *tcpPacketConn) SetDeadline(d time.Time) error { _ = "STUB: not implemented"; return nil }
 
-		// wait for some time to flush pending writes
-		_ = conn.SetWriteDeadline(time.Now().Add(5 * time.Second))
-		// read deadline as well just in case
-		_ = conn.SetReadDeadline(time.Now().Add(5 * time.Second))
+func (t *tcpPacketConn) SetReadDeadline(d time.Time) error { _ = "STUB: not implemented"; return nil }
 
-		delete(t.conns, conn.RemoteAddr().String())
-	}
+func (t *tcpPacketConn) SetWriteDeadline(d time.Time) error { _ = "STUB: not implemented"; return nil }
 
-	t.mu.Unlock()
+func (t *tcpPacketConn) CloseChannel() <-chan struct{} { _ = "STUB: not implemented"; return nil }
 
-	t.wg.Wait()
-
-	if shouldCloseRecvChan {
-		close(t.recvChan)
-	}
-
-	return nil
-}
-
-func (t *tcpPacketConn) LocalAddr() net.Addr {
-	return t.params.LocalAddr
-}
-
-func (t *tcpPacketConn) SetDeadline(d time.Time) error {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-
-	var err error
-	for _, conn := range t.conns {
-		if setErr := conn.SetDeadline(d); err == nil && setErr != nil {
-			err = setErr
-		}
-	}
-
-	return err
-}
-
-func (t *tcpPacketConn) SetReadDeadline(d time.Time) error {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-
-	var err error
-	for _, conn := range t.conns {
-		if setErr := conn.SetReadDeadline(d); err == nil && setErr != nil {
-			err = setErr
-		}
-	}
-
-	return err
-}
-
-func (t *tcpPacketConn) SetWriteDeadline(d time.Time) error {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-
-	var err error
-	for _, conn := range t.conns {
-		if setErr := conn.SetWriteDeadline(d); err == nil && setErr != nil {
-			err = setErr
-		}
-	}
-
-	return err
-}
-
-func (t *tcpPacketConn) CloseChannel() <-chan struct{} {
-	return t.closedChan
-}
-
-func (t *tcpPacketConn) String() string {
-	return fmt.Sprintf("tcpPacketConn{LocalAddr: %s}", t.params.LocalAddr)
-}
+func (t *tcpPacketConn) String() string { _ = "STUB: not implemented"; return "" }

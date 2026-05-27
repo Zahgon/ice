@@ -4,11 +4,7 @@
 package ice
 
 import (
-	"fmt"
 	"net"
-	"sort"
-	"strings"
-	"sync/atomic"
 	"time"
 
 	"github.com/pion/logging"
@@ -26,11 +22,8 @@ type NominationValueGenerator func() uint32
 // DefaultNominationValueGenerator returns a generator that starts at 1 and increments for each call.
 // This provides a simple, monotonically increasing sequence suitable for renomination.
 func DefaultNominationValueGenerator() NominationValueGenerator {
-	var counter atomic.Uint32
-
-	return func() uint32 {
-		return counter.Add(1)
-	}
+	_ = "STUB: not implemented"
+	return *new(NominationValueGenerator)
 }
 
 // WithAddressRewriteRules appends the provided address rewrite (1:1) rules to the agent's
@@ -49,138 +42,32 @@ func DefaultNominationValueGenerator() NominationValueGenerator {
 // iface-only, then global) while still keeping rule order meaningful.
 // Overlapping rules in the same scope are logged as warnings.
 func WithAddressRewriteRules(rules ...AddressRewriteRule) AgentOption {
-	return func(agent *Agent) error {
-		if agent.constructed {
-			return ErrAgentOptionNotUpdatable
-		}
-
-		return appendAddressRewriteRules(agent, rules...)
-	}
+	_ = "STUB: not implemented"
+	return *new(AgentOption)
 }
 
-func warnOnAddressRewriteConflicts(agent *Agent) {
-	if agent == nil || agent.log == nil {
-		return
-	}
+func warnOnAddressRewriteConflicts(agent *Agent) { _ = "STUB: not implemented"; return }
 
-	for _, conflict := range findAddressRewriteRuleConflicts(agent.addressRewriteRules) {
-		scope := conflict.scope
-		scopeSummary := fmt.Sprintf(
-			"candidate=%s iface=%s cidr=%s networks=%s local=%s",
-			scope.candidateType.String(),
-			emptyScopeValue(scope.iface),
-			emptyScopeValue(scope.cidr),
-			emptyScopeValue(scope.networksKey),
-			scope.localKey,
-		)
-
-		message := fmt.Sprintf(
-			"detected overlapping address rewrite rule (%s): existing external IPs [%s], additional external IP %s",
-			scopeSummary,
-			strings.Join(conflict.existingExternalIPs, ", "),
-			conflict.conflictingExternal,
-		)
-
-		agent.log.Warn(message)
-	}
-}
-
-func emptyScopeValue(v string) string {
-	if v == "" {
-		return "*"
-	}
-
-	return v
-}
+func emptyScopeValue(v string) string { _ = "STUB: not implemented"; return "" }
 
 func appendAddressRewriteRules(agent *Agent, rules ...AddressRewriteRule) error {
-	if len(rules) == 0 {
-		return nil
-	}
-
-	sanitized := make([]AddressRewriteRule, 0, len(rules))
-	for _, rule := range rules {
-		normalized, err := sanitizeAddressRewriteRule(rule)
-		if err != nil {
-			return err
-		}
-
-		sanitized = append(sanitized, normalized)
-	}
-
-	agent.addressRewriteRules = append(agent.addressRewriteRules, sanitized...)
-	warnOnAddressRewriteConflicts(agent)
-
+	_ = "STUB: not implemented"
 	return nil
 }
 
 func sanitizeAddressRewriteRule(rule AddressRewriteRule) (AddressRewriteRule, error) {
-	cleaned, err := sanitizeExternalIPs(rule.External)
-	if err != nil {
-		return AddressRewriteRule{}, err
-	}
-
-	normalized := rule
-	normalized.External = cleaned
-	normalized.Local = strings.TrimSpace(rule.Local)
-	if normalized.Local != "" {
-		if _, _, err := validateIPString(normalized.Local); err != nil {
-			return AddressRewriteRule{}, err
-		}
-	}
-	switch normalized.Mode {
-	case addressRewriteModeUnspecified:
-		normalized.Mode = defaultAddressRewriteMode(normalized.AsCandidateType)
-	case AddressRewriteReplace, AddressRewriteAppend:
-	default:
-		return AddressRewriteRule{}, ErrInvalidNAT1To1IPMapping
-	}
-	if len(rule.Networks) > 0 {
-		normalized.Networks = append([]NetworkType(nil), rule.Networks...)
-	}
-
-	return normalized, nil
+	_ = "STUB: not implemented"
+	return *new(AddressRewriteRule), nil
 }
 
 func defaultAddressRewriteMode(candidateType CandidateType) AddressRewriteMode {
-	if candidateType == CandidateTypeUnspecified || candidateType == CandidateTypeHost {
-		return AddressRewriteReplace
-	}
-
-	return AddressRewriteAppend
+	_ = "STUB: not implemented"
+	return *new(AddressRewriteMode)
 }
 
 func sanitizeExternalIPs(ips []string) ([]string, error) {
-	seen := make(map[string]struct{}, len(ips))
-	sanitized := make([]string, 0, len(ips))
-
-	for _, raw := range ips {
-		trimmed := strings.TrimSpace(raw)
-		if trimmed == "" {
-			continue
-		}
-
-		if _, ok := seen[trimmed]; ok {
-			continue
-		}
-
-		if strings.Contains(trimmed, "/") {
-			return nil, ErrInvalidNAT1To1IPMapping
-		}
-
-		if _, _, err := validateIPString(trimmed); err != nil {
-			return nil, err
-		}
-
-		seen[trimmed] = struct{}{}
-		sanitized = append(sanitized, trimmed)
-	}
-
-	if len(sanitized) == 0 {
-		return nil, ErrInvalidNAT1To1IPMapping
-	}
-
-	return sanitized, nil
+	_ = "STUB: not implemented"
+	return nil, nil
 }
 
 type addressRewriteScopeKey struct {
@@ -198,56 +85,8 @@ type addressRewriteConflict struct {
 }
 
 func findAddressRewriteRuleConflicts(rules []AddressRewriteRule) []addressRewriteConflict {
-	conflicts := make([]addressRewriteConflict, 0)
-	scopeState := make(map[addressRewriteScopeKey]map[string]struct{})
-
-	for _, rule := range rules {
-		candidateType := rule.AsCandidateType
-		if candidateType == CandidateTypeUnspecified {
-			candidateType = CandidateTypeHost
-		}
-
-		networksKey := "*"
-		if len(rule.Networks) > 0 {
-			names := make([]string, len(rule.Networks))
-			for i, network := range rule.Networks {
-				names[i] = network.String()
-			}
-			sort.Strings(names)
-			networksKey = strings.Join(names, ",")
-		}
-
-		externalEntries := enumerateAddressRewriteExternalEntries(rule)
-		for _, entry := range externalEntries {
-			key := addressRewriteScopeKey{
-				candidateType: candidateType,
-				iface:         rule.Iface,
-				cidr:          rule.CIDR,
-				networksKey:   networksKey,
-				localKey:      entry.localScopeKey,
-			}
-
-			existing := scopeState[key]
-			if existing == nil {
-				existing = make(map[string]struct{})
-				scopeState[key] = existing
-			}
-
-			if len(existing) > 0 {
-				if _, ok := existing[entry.externalIP]; !ok {
-					conflicts = append(conflicts, addressRewriteConflict{
-						scope:               key,
-						existingExternalIPs: mapKeys(existing),
-						conflictingExternal: entry.externalIP,
-					})
-				}
-			}
-
-			existing[entry.externalIP] = struct{}{}
-		}
-	}
-
-	return conflicts
+	_ = "STUB: not implemented"
+	return nil
 }
 
 type addressRewriteExternalEntry struct {
@@ -256,402 +95,145 @@ type addressRewriteExternalEntry struct {
 }
 
 func enumerateAddressRewriteExternalEntries(rule AddressRewriteRule) []addressRewriteExternalEntry {
-	if len(rule.External) == 0 {
-		return nil
-	}
-
-	entries := make([]addressRewriteExternalEntry, 0, len(rule.External))
-	localScope := deriveAddressRewriteLocalScopeKey(rule.Local)
-
-	for _, mapping := range rule.External {
-		if mapping == "" {
-			continue
-		}
-
-		external := strings.TrimSpace(mapping)
-		if external == "" {
-			continue
-		}
-
-		scopeKey := localScope
-		if scopeKey == "" {
-			scopeKey = deriveAddressRewriteFamilyScopeKey(external)
-		}
-
-		entries = append(entries, addressRewriteExternalEntry{
-			externalIP:    external,
-			localScopeKey: scopeKey,
-		})
-	}
-
-	return entries
+	_ = "STUB: not implemented"
+	return nil
 }
 
-func deriveAddressRewriteLocalScopeKey(local string) string {
-	local = strings.TrimSpace(local)
-	if local == "" {
-		return ""
-	}
+func deriveAddressRewriteLocalScopeKey(local string) string { _ = "STUB: not implemented"; return "" }
 
-	ip, _, err := validateIPString(local)
-	if err != nil {
-		return "family:unknown"
-	}
+func deriveAddressRewriteFamilyScopeKey(ipStr string) string { _ = "STUB: not implemented"; return "" }
 
-	if ip.To4() != nil {
-		return "family:ipv4"
-	}
-
-	return "family:ipv6"
-}
-
-func deriveAddressRewriteFamilyScopeKey(ipStr string) string {
-	ip, _, err := validateIPString(ipStr)
-	if err != nil {
-		return "family:unknown"
-	}
-
-	if ip.To4() != nil {
-		return "family:ipv4"
-	}
-
-	return "family:ipv6"
-}
-
-func mapKeys(m map[string]struct{}) []string {
-	if len(m) == 0 {
-		return nil
-	}
-
-	keys := make([]string, 0, len(m))
-	for k := range m {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-
-	return keys
-}
+func mapKeys(m map[string]struct{}) []string { _ = "STUB: not implemented"; return nil }
 
 // WithICELite configures whether the agent operates in lite mode.
 // Lite agents do not perform connectivity checks and only provide host candidates.
-func WithICELite(lite bool) AgentOption {
-	return func(a *Agent) error {
-		if a.constructed {
-			return ErrAgentOptionNotUpdatable
-		}
-
-		a.lite = lite
-
-		return nil
-	}
-}
+func WithICELite(lite bool) AgentOption { _ = "STUB: not implemented"; return *new(AgentOption) }
 
 // WithUrls sets the STUN/TURN server URLs used by the agent.
-func WithUrls(urls []*stun.URI) AgentOption {
-	return func(a *Agent) error {
-		if len(urls) == 0 {
-			a.urls = nil
-
-			return nil
-		}
-
-		cloned := make([]*stun.URI, len(urls))
-		copy(cloned, urls)
-		a.urls = cloned
-
-		return nil
-	}
-}
+func WithUrls(urls []*stun.URI) AgentOption { _ = "STUB: not implemented"; return *new(AgentOption) }
 
 // WithPortRange sets the UDP port range for host candidates.
 func WithPortRange(portMin, portMax uint16) AgentOption {
-	return func(a *Agent) error {
-		if a.constructed {
-			return ErrAgentOptionNotUpdatable
-		}
-
-		a.portMin = portMin
-		a.portMax = portMax
-
-		return nil
-	}
+	_ = "STUB: not implemented"
+	return *new(AgentOption)
 }
 
 // WithDisconnectedTimeout sets the duration before the agent transitions to disconnected state.
 // A timeout of 0 disables the transition.
 func WithDisconnectedTimeout(timeout time.Duration) AgentOption {
-	return func(a *Agent) error {
-		if a.constructed {
-			return ErrAgentOptionNotUpdatable
-		}
-
-		a.disconnectedTimeout = timeout
-
-		return nil
-	}
+	_ = "STUB: not implemented"
+	return *new(AgentOption)
 }
 
 // WithFailedTimeout sets the duration before the agent transitions to failed state after disconnected.
 // A timeout of 0 disables the transition.
 func WithFailedTimeout(timeout time.Duration) AgentOption {
-	return func(a *Agent) error {
-		if a.constructed {
-			return ErrAgentOptionNotUpdatable
-		}
-
-		a.failedTimeout = timeout
-
-		return nil
-	}
+	_ = "STUB: not implemented"
+	return *new(AgentOption)
 }
 
 // WithKeepaliveInterval sets how often ICE keepalive packets are sent.
 // An interval of 0 disables keepalives.
 func WithKeepaliveInterval(interval time.Duration) AgentOption {
-	return func(a *Agent) error {
-		if a.constructed {
-			return ErrAgentOptionNotUpdatable
-		}
-
-		a.keepaliveInterval = interval
-
-		return nil
-	}
+	_ = "STUB: not implemented"
+	return *new(AgentOption)
 }
 
 // WithHostAcceptanceMinWait sets the minimum wait before selecting host candidates.
 func WithHostAcceptanceMinWait(wait time.Duration) AgentOption {
-	return func(a *Agent) error {
-		if a.constructed {
-			return ErrAgentOptionNotUpdatable
-		}
-
-		a.hostAcceptanceMinWait = wait
-
-		return nil
-	}
+	_ = "STUB: not implemented"
+	return *new(AgentOption)
 }
 
 // WithSrflxAcceptanceMinWait sets the minimum wait before selecting srflx candidates.
 func WithSrflxAcceptanceMinWait(wait time.Duration) AgentOption {
-	return func(a *Agent) error {
-		if a.constructed {
-			return ErrAgentOptionNotUpdatable
-		}
-
-		a.srflxAcceptanceMinWait = wait
-
-		return nil
-	}
+	_ = "STUB: not implemented"
+	return *new(AgentOption)
 }
 
 // WithPrflxAcceptanceMinWait sets the minimum wait before selecting prflx candidates.
 func WithPrflxAcceptanceMinWait(wait time.Duration) AgentOption {
-	return func(a *Agent) error {
-		if a.constructed {
-			return ErrAgentOptionNotUpdatable
-		}
-
-		a.prflxAcceptanceMinWait = wait
-
-		return nil
-	}
+	_ = "STUB: not implemented"
+	return *new(AgentOption)
 }
 
 // WithRelayAcceptanceMinWait sets the minimum wait before selecting relay candidates.
 func WithRelayAcceptanceMinWait(wait time.Duration) AgentOption {
-	return func(a *Agent) error {
-		if a.constructed {
-			return ErrAgentOptionNotUpdatable
-		}
-
-		a.relayAcceptanceMinWait = wait
-
-		return nil
-	}
+	_ = "STUB: not implemented"
+	return *new(AgentOption)
 }
 
 // WithSTUNGatherTimeout sets the STUN gather timeout.
 func WithSTUNGatherTimeout(timeout time.Duration) AgentOption {
-	return func(a *Agent) error {
-		if a.constructed {
-			return ErrAgentOptionNotUpdatable
-		}
-
-		a.stunGatherTimeout = timeout
-
-		return nil
-	}
+	_ = "STUB: not implemented"
+	return *new(AgentOption)
 }
 
 // WithIPFilter sets a filter for IP addresses used during candidate gathering.
 func WithIPFilter(filter func(net.IP) bool) AgentOption {
-	return func(a *Agent) error {
-		if a.constructed {
-			return ErrAgentOptionNotUpdatable
-		}
-
-		a.ipFilter = filter
-
-		return nil
-	}
+	_ = "STUB: not implemented"
+	return *new(AgentOption)
 }
 
 // WithRemoteIPFilter sets a filter for remote candidate IP addresses.
 // Candidates for which this function returns false are ignored.
 func WithRemoteIPFilter(filter func(net.IP) bool) AgentOption {
-	return func(a *Agent) error {
-		if a.constructed {
-			return ErrAgentOptionNotUpdatable
-		}
-
-		a.remoteIPFilter = filter
-
-		return nil
-	}
+	_ = "STUB: not implemented"
+	return *new(AgentOption)
 }
 
 // WithNet sets the underlying network implementation for the agent.
-func WithNet(net transport.Net) AgentOption {
-	return func(a *Agent) error {
-		if a.constructed {
-			return ErrAgentOptionNotUpdatable
-		}
-
-		a.net = net
-
-		return nil
-	}
-}
+func WithNet(net transport.Net) AgentOption { _ = "STUB: not implemented"; return *new(AgentOption) }
 
 // WithMulticastDNSMode configures mDNS behavior for the agent.
 func WithMulticastDNSMode(mode MulticastDNSMode) AgentOption {
-	return func(a *Agent) error {
-		if a.constructed {
-			return ErrAgentOptionNotUpdatable
-		}
-
-		a.mDNSMode = mode
-
-		return nil
-	}
+	_ = "STUB: not implemented"
+	return *new(AgentOption)
 }
 
 // WithMulticastDNSHostName sets the mDNS host name used by the agent.
 func WithMulticastDNSHostName(hostName string) AgentOption {
-	return func(a *Agent) error {
-		if a.constructed {
-			return ErrAgentOptionNotUpdatable
-		}
-
-		if !strings.HasSuffix(hostName, ".local") || len(strings.Split(hostName, ".")) != 2 {
-			return ErrInvalidMulticastDNSHostName
-		}
-
-		a.mDNSName = hostName
-
-		return nil
-	}
+	_ = "STUB: not implemented"
+	return *new(AgentOption)
 }
 
 // WithLocalCredentials sets the local ICE username fragment and password used during Restart.
 // If empty strings are provided, the agent will generate values during Restart.
 func WithLocalCredentials(ufrag, pwd string) AgentOption {
-	return func(a *Agent) error { //nolint:varnamelen
-		if a.constructed {
-			return ErrAgentOptionNotUpdatable
-		}
-
-		if ufrag != "" && len([]rune(ufrag))*8 < 24 {
-			return ErrLocalUfragInsufficientBits
-		}
-		if pwd != "" && len([]rune(pwd))*8 < 128 {
-			return ErrLocalPwdInsufficientBits
-		}
-
-		a.localUfrag = ufrag
-		a.localPwd = pwd
-
-		return nil
-	}
+	_ = "STUB: not implemented"
+	return *new(AgentOption)
 }
+
+//nolint:varnamelen
 
 // WithTCPMux sets the TCP mux for ICE TCP multiplexing.
-func WithTCPMux(tcpMux TCPMux) AgentOption {
-	return func(a *Agent) error {
-		if a.constructed {
-			return ErrAgentOptionNotUpdatable
-		}
-
-		a.tcpMux = tcpMux
-
-		return nil
-	}
-}
+func WithTCPMux(tcpMux TCPMux) AgentOption { _ = "STUB: not implemented"; return *new(AgentOption) }
 
 // WithUDPMux sets the UDP mux used for multiplexing host candidates.
-func WithUDPMux(udpMux UDPMux) AgentOption {
-	return func(a *Agent) error {
-		if a.constructed {
-			return ErrAgentOptionNotUpdatable
-		}
-
-		a.udpMux = udpMux
-
-		return nil
-	}
-}
+func WithUDPMux(udpMux UDPMux) AgentOption { _ = "STUB: not implemented"; return *new(AgentOption) }
 
 // WithUDPMuxSrflx sets the UDP mux for server reflexive candidates.
 func WithUDPMuxSrflx(udpMuxSrflx UniversalUDPMux) AgentOption {
-	return func(a *Agent) error {
-		if a.constructed {
-			return ErrAgentOptionNotUpdatable
-		}
-
-		a.udpMuxSrflx = udpMuxSrflx
-
-		return nil
-	}
+	_ = "STUB: not implemented"
+	return *new(AgentOption)
 }
 
 // WithProxyDialer sets the proxy dialer used for TURN over TCP/TLS/DTLS connections.
 func WithProxyDialer(dialer proxy.Dialer) AgentOption {
-	return func(a *Agent) error {
-		if a.constructed {
-			return ErrAgentOptionNotUpdatable
-		}
-
-		a.proxyDialer = dialer
-
-		return nil
-	}
+	_ = "STUB: not implemented"
+	return *new(AgentOption)
 }
 
 // WithMaxBindingRequests sets the maximum number of binding requests before considering a pair failed.
 func WithMaxBindingRequests(limit uint16) AgentOption {
-	return func(a *Agent) error {
-		if a.constructed {
-			return ErrAgentOptionNotUpdatable
-		}
-
-		a.maxBindingRequests = limit
-
-		return nil
-	}
+	_ = "STUB: not implemented"
+	return *new(AgentOption)
 }
 
 // WithCheckInterval sets how often the agent runs connectivity checks while connecting.
 func WithCheckInterval(interval time.Duration) AgentOption {
-	return func(a *Agent) error {
-		if a.constructed {
-			return ErrAgentOptionNotUpdatable
-		}
-
-		a.checkInterval = interval
-
-		return nil
-	}
+	_ = "STUB: not implemented"
+	return *new(AgentOption)
 }
 
 // WithRenomination enables ICE renomination as described in draft-thatcher-ice-renomination-01.
@@ -666,19 +248,8 @@ func WithCheckInterval(interval time.Duration) AgentOption {
 //
 //	agent, err := NewAgentWithOptions(config, WithRenomination(DefaultNominationValueGenerator()))
 func WithRenomination(generator NominationValueGenerator) AgentOption {
-	return func(a *Agent) error {
-		if a.constructed {
-			return ErrAgentOptionNotUpdatable
-		}
-
-		if generator == nil {
-			return ErrInvalidNominationValueGenerator
-		}
-		a.enableRenomination = true
-		a.nominationValueGenerator = generator
-
-		return nil
-	}
+	_ = "STUB: not implemented"
+	return *new(AgentOption)
 }
 
 // WithNominationAttribute sets the STUN attribute type to use for ICE renomination.
@@ -689,21 +260,11 @@ func WithRenomination(generator NominationValueGenerator) AgentOption {
 // Currently, validation ensures the attribute is not 0x0000 (reserved).
 // Additional validation may be added in the future.
 func WithNominationAttribute(attrType uint16) AgentOption {
-	return func(a *Agent) error {
-		if a.constructed {
-			return ErrAgentOptionNotUpdatable
-		}
-
-		// Basic validation: ensure it's not the reserved 0x0000
-		if attrType == 0x0000 {
-			return ErrInvalidNominationAttribute
-		}
-
-		a.nominationAttribute = stun.AttrType(attrType)
-
-		return nil
-	}
+	_ = "STUB: not implemented"
+	return *new(AgentOption)
 }
+
+// Basic validation: ensure it's not the reserved 0x0000
 
 // WithIncludeLoopback includes loopback addresses in the candidate list.
 // By default, loopback addresses are excluded.
@@ -711,17 +272,7 @@ func WithNominationAttribute(attrType uint16) AgentOption {
 // Example:
 //
 //	agent, err := NewAgentWithOptions(WithIncludeLoopback())
-func WithIncludeLoopback() AgentOption {
-	return func(a *Agent) error {
-		if a.constructed {
-			return ErrAgentOptionNotUpdatable
-		}
-
-		a.includeLoopback = true
-
-		return nil
-	}
-}
+func WithIncludeLoopback() AgentOption { _ = "STUB: not implemented"; return *new(AgentOption) }
 
 // WithTCPPriorityOffset sets a number which is subtracted from the default (UDP) candidate type preference
 // for host, srflx and prfx candidate types. It helps to configure relative preference of UDP candidates
@@ -732,15 +283,8 @@ func WithIncludeLoopback() AgentOption {
 //
 //	agent, err := NewAgentWithOptions(WithTCPPriorityOffset(50))
 func WithTCPPriorityOffset(offset uint16) AgentOption {
-	return func(a *Agent) error {
-		if a.constructed {
-			return ErrAgentOptionNotUpdatable
-		}
-
-		a.tcpPriorityOffset = offset
-
-		return nil
-	}
+	_ = "STUB: not implemented"
+	return *new(AgentOption)
 }
 
 // WithDisableActiveTCP disables Active TCP candidates.
@@ -750,17 +294,7 @@ func WithTCPPriorityOffset(offset uint16) AgentOption {
 // Example:
 //
 //	agent, err := NewAgentWithOptions(WithDisableActiveTCP())
-func WithDisableActiveTCP() AgentOption {
-	return func(a *Agent) error {
-		if a.constructed {
-			return ErrAgentOptionNotUpdatable
-		}
-
-		a.disableActiveTCP = true
-
-		return nil
-	}
-}
+func WithDisableActiveTCP() AgentOption { _ = "STUB: not implemented"; return *new(AgentOption) }
 
 // WithBindingRequestHandler sets a handler to allow applications to perform logic on incoming STUN Binding Requests.
 // This was implemented to allow users to:
@@ -778,15 +312,8 @@ func WithDisableActiveTCP() AgentOption {
 func WithBindingRequestHandler(
 	handler func(m *stun.Message, local, remote Candidate, pair *CandidatePair) bool,
 ) AgentOption {
-	return func(a *Agent) error {
-		if a.constructed {
-			return ErrAgentOptionNotUpdatable
-		}
-
-		a.userBindingRequestHandler = handler
-
-		return nil
-	}
+	_ = "STUB: not implemented"
+	return *new(AgentOption)
 }
 
 // WithEnableUseCandidateCheckPriority enables checking for equal or higher priority when
@@ -799,15 +326,8 @@ func WithBindingRequestHandler(
 //
 //	agent, err := NewAgentWithOptions(WithEnableUseCandidateCheckPriority())
 func WithEnableUseCandidateCheckPriority() AgentOption {
-	return func(a *Agent) error {
-		if a.constructed {
-			return ErrAgentOptionNotUpdatable
-		}
-
-		a.enableUseCandidateCheckPriority = true
-
-		return nil
-	}
+	_ = "STUB: not implemented"
+	return *new(AgentOption)
 }
 
 // WithContinualGatheringPolicy sets the continual gathering policy for the agent.
@@ -819,15 +339,8 @@ func WithEnableUseCandidateCheckPriority() AgentOption {
 //
 //	agent, err := NewAgentWithOptions(WithContinualGatheringPolicy(GatherContinually))
 func WithContinualGatheringPolicy(policy ContinualGatheringPolicy) AgentOption {
-	return func(a *Agent) error {
-		if a.constructed {
-			return ErrAgentOptionNotUpdatable
-		}
-
-		a.continualGatheringPolicy = policy
-
-		return nil
-	}
+	_ = "STUB: not implemented"
+	return *new(AgentOption)
 }
 
 // WithNetworkMonitorInterval sets the interval at which the agent checks for network interface changes
@@ -842,18 +355,8 @@ func WithContinualGatheringPolicy(policy ContinualGatheringPolicy) AgentOption {
 //		WithNetworkMonitorInterval(5 * time.Second),
 //	)
 func WithNetworkMonitorInterval(interval time.Duration) AgentOption {
-	return func(a *Agent) error {
-		if a.constructed {
-			return ErrAgentOptionNotUpdatable
-		}
-
-		if interval <= 0 {
-			return ErrInvalidNetworkMonitorInterval
-		}
-		a.networkMonitorInterval = interval
-
-		return nil
-	}
+	_ = "STUB: not implemented"
+	return *new(AgentOption)
 }
 
 // WithNetworkTypes sets the enabled candidate network types for candidate gathering.
@@ -867,20 +370,8 @@ func WithNetworkMonitorInterval(interval time.Duration) AgentOption {
 //		WithNetworkTypes([]NetworkType{NetworkTypeUDP4, NetworkTypeUDP6}),
 //	)
 func WithNetworkTypes(networkTypes []NetworkType) AgentOption {
-	return func(a *Agent) error {
-		if a.constructed {
-			return ErrAgentOptionNotUpdatable
-		}
-
-		normalized, err := sanitizeTransportNetworkTypes(networkTypes)
-		if err != nil {
-			return err
-		}
-
-		a.networkTypes = normalized
-
-		return nil
-	}
+	_ = "STUB: not implemented"
+	return *new(AgentOption)
 }
 
 // WithTURNTransportProtocols restricts protocols used by this agent when
@@ -890,43 +381,13 @@ func WithNetworkTypes(networkTypes []NetworkType) AgentOption {
 // network types announced to the peer. Supported values are
 // NetworkTypeUDP4/UDP6 and NetworkTypeTCP4/TCP6.
 func WithTURNTransportProtocols(protocols []NetworkType) AgentOption {
-	return func(a *Agent) error {
-		if a.constructed {
-			return ErrAgentOptionNotUpdatable
-		}
-
-		normalized, err := sanitizeTransportNetworkTypes(protocols)
-		if err != nil {
-			return err
-		}
-
-		a.turnTransportProtocols = normalized
-
-		return nil
-	}
+	_ = "STUB: not implemented"
+	return *new(AgentOption)
 }
 
 func sanitizeTransportNetworkTypes(types []NetworkType) ([]NetworkType, error) {
-	if len(types) == 0 {
-		return nil, nil
-	}
-
-	seen := map[NetworkType]struct{}{}
-	out := make([]NetworkType, 0, len(types))
-	for _, networkType := range types {
-		if !networkType.IsUDP() && !networkType.IsTCP() {
-			return nil, ErrProtoType
-		}
-
-		if _, ok := seen[networkType]; ok {
-			continue
-		}
-
-		seen[networkType] = struct{}{}
-		out = append(out, networkType)
-	}
-
-	return out, nil
+	_ = "STUB: not implemented"
+	return nil, nil
 }
 
 // WithCandidateTypes sets the enabled candidate types for gathering.
@@ -938,15 +399,8 @@ func sanitizeTransportNetworkTypes(types []NetworkType) ([]NetworkType, error) {
 //		WithCandidateTypes([]CandidateType{CandidateTypeHost, CandidateTypeServerReflexive}),
 //	)
 func WithCandidateTypes(candidateTypes []CandidateType) AgentOption {
-	return func(a *Agent) error {
-		if a.constructed {
-			return ErrAgentOptionNotUpdatable
-		}
-
-		a.candidateTypes = candidateTypes
-
-		return nil
-	}
+	_ = "STUB: not implemented"
+	return *new(AgentOption)
 }
 
 // WithAutomaticRenomination enables automatic renomination of candidate pairs
@@ -967,19 +421,11 @@ func WithCandidateTypes(candidateTypes []CandidateType) AgentOption {
 //		WithAutomaticRenomination(3*time.Second),
 //	)
 func WithAutomaticRenomination(interval time.Duration) AgentOption {
-	return func(a *Agent) error {
-		if a.constructed {
-			return ErrAgentOptionNotUpdatable
-		}
-
-		a.automaticRenomination = true
-		if interval > 0 {
-			a.renominationInterval = interval
-		}
-		// Note: renomination must be enabled separately via WithRenomination
-		return nil
-	}
+	_ = "STUB: not implemented"
+	return *new(AgentOption)
 }
+
+// Note: renomination must be enabled separately via WithRenomination
 
 // WithInterfaceFilter sets a filter function to whitelist or blacklist network interfaces
 // for ICE candidate gathering.
@@ -996,15 +442,8 @@ func WithAutomaticRenomination(interval time.Duration) AgentOption {
 //		}),
 //	)
 func WithInterfaceFilter(filter func(string) bool) AgentOption {
-	return func(a *Agent) error {
-		if a.constructed {
-			return ErrAgentOptionNotUpdatable
-		}
-
-		a.interfaceFilter = filter
-
-		return nil
-	}
+	_ = "STUB: not implemented"
+	return *new(AgentOption)
 }
 
 // WithLoggerFactory sets the logger factory for the agent.
@@ -1017,13 +456,6 @@ func WithInterfaceFilter(filter func(string) bool) AgentOption {
 //	loggerFactory.DefaultLogLevel = logging.LogLevelDebug
 //	agent, err := NewAgentWithOptions(WithLoggerFactory(loggerFactory))
 func WithLoggerFactory(loggerFactory logging.LoggerFactory) AgentOption {
-	return func(a *Agent) error {
-		if a.constructed {
-			return ErrAgentOptionNotUpdatable
-		}
-
-		a.log = loggerFactory.NewLogger("ice")
-
-		return nil
-	}
+	_ = "STUB: not implemented"
+	return *new(AgentOption)
 }

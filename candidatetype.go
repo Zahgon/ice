@@ -3,8 +3,6 @@
 
 package ice
 
-import "slices"
-
 // CandidateType represents the type of candidate.
 type CandidateType byte
 
@@ -18,22 +16,7 @@ const (
 )
 
 // String makes CandidateType printable.
-func (c CandidateType) String() string {
-	switch c {
-	case CandidateTypeHost:
-		return "host"
-	case CandidateTypeServerReflexive:
-		return "srflx"
-	case CandidateTypePeerReflexive:
-		return "prflx"
-	case CandidateTypeRelay:
-		return "relay"
-	case CandidateTypeUnspecified:
-		return "Unknown candidate type"
-	}
-
-	return "Unknown candidate type"
-}
+func (c CandidateType) String() string { _ = "STUB: not implemented"; return "" }
 
 // Preference returns the preference weight of a CandidateType
 //
@@ -41,25 +24,9 @@ func (c CandidateType) String() string {
 // The RECOMMENDED values are 126 for host candidates, 100
 // for server reflexive candidates, 110 for peer reflexive candidates,
 // and 0 for relayed candidates.
-func (c CandidateType) Preference() uint16 {
-	switch c {
-	case CandidateTypeHost:
-		return 126
-	case CandidateTypePeerReflexive:
-		return 110
-	case CandidateTypeServerReflexive:
-		return 100
-	case CandidateTypeRelay, CandidateTypeUnspecified:
-		return 0
-	}
-
-	return 0
-}
+func (c CandidateType) Preference() uint16 { _ = "STUB: not implemented"; return 0 }
 
 func containsCandidateType(candidateType CandidateType, candidateTypeList []CandidateType) bool {
-	if candidateTypeList == nil {
-		return false
-	}
-
-	return slices.Contains(candidateTypeList, candidateType)
+	_ = "STUB: not implemented"
+	return false
 }
